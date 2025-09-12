@@ -47,7 +47,7 @@ services:
       - ./data:/var/lib/mysql
       - ./init-scripts:/docker-entrypoint-initdb.d/
     ports:
-      - "127.0.0.1:3306:3306"
+      - "127.0.0.1:3307:3306"
 
 
 networks:

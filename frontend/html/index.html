@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Exemplo API</title>
+</head>
+
+<body>
+    <h1>Soma</h1>
+    <label>
+        AUTH:
+        <input id="auth" value="" />
+    </label>
+    <br>
+    <label>
+        N1:
+        <input id="n1" value="0" />
+    </label>
+    <br>
+    <label>
+        N2:
+        <input id="n2" value="0" />
+    </label>
+    <br><br>
+
+    <button id="btn">Buscar</button>
+    <pre id="resultado">— aguardando —</pre>
+
+    <script>
+        document.getElementById("btn").addEventListener("click", async () => {
+            const output = document.getElementById("resultado");
+            output.textContent = "Carregando...";
+
+            const auth = document.getElementById("auth").value;
+            const n1 = parseFloat(document.getElementById("n1").value);
+            const n2 = parseFloat(document.getElementById("n2").value);
+
+            try {
+                const resp = await fetch("https://b.dattaflow.com/soma", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ auth, n1, n2 })
+                });
+
+                if (!resp.ok) {
+                    throw new Error(`Erro HTTP: ${resp.status}`);
+                }
+
+                const json = await resp.json();
+                output.textContent = json.mensagem; // só a mensagem
+            } catch (e) {
+                output.textContent = e.message;
+            }
+        });
+    </script>
+
+
+</body>
+
+</html>

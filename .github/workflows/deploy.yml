@@ -1,0 +1,68 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" -H "${{ secrets.SERVER_IP }}" >> ~/.ssh/known_hosts
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Define deploy vars
+        id: vars
+        run: |
+          set -Eeuo pipefail
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "branch=main" >> $GITHUB_OUTPUT
+            echo "env=prod" >> $GITHUB_OUTPUT
+            echo "dir=${{ secrets.PROD_DIR }}" >> $GITHUB_OUTPUT
+            echo "health=${{ secrets.PROD_HEALTHCHECK_URL }}" >> $GITHUB_OUTPUT
+          else
+            echo "branch=develop" >> $GITHUB_OUTPUT
+            echo "env=dev" >> $GITHUB_OUTPUT
+            echo "dir=${{ secrets.DEV_DIR }}" >> $GITHUB_OUTPUT
+            echo "health=${{ secrets.DEV_HEALTHCHECK_URL }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy over SSH
+        run: |
+          set -Eeuo pipefail
+          SERVER="${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}"
+          PORT="${{ secrets.SSH_PORT }}"
+          REMOTE_DIR="${{ steps.vars.outputs.dir }}"
+          GIT_BRANCH="${{ steps.vars.outputs.branch }}"
+          DEPLOY_ENV="${{ steps.vars.outputs.env }}"
+
+          ssh -p "$PORT" "$SERVER" "
+            set -Eeuo pipefail
+            cd '$REMOTE_DIR' &&
+            git fetch --all --prune &&
+            git reset --hard 'origin/$GIT_BRANCH' &&
+            chmod +x deploy.sh &&
+            ./deploy.sh '$DEPLOY_ENV' up
+          "
+          

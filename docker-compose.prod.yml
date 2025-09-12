@@ -33,6 +33,22 @@ services:
       - ./frontend/html:/usr/share/nginx/html
     networks:
       - traefik-net
+  database:
+    build:
+      context: ./database
+    container_name: database-teste
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - ./data:/var/lib/mysql
+      - ./init-scripts:/docker-entrypoint-initdb.d/
+    ports:
+      - "127.0.0.1:3306:3306"
+
 
 networks:
   traefik-net:

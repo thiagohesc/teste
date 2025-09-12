@@ -48,7 +48,7 @@
                 }
 
                 const json = await resp.json();
-                output.textContent = json.mensagem; // só a mensagem
+                output.textContent = json.mensagem;
             } catch (e) {
                 output.textContent = e.message;
             }

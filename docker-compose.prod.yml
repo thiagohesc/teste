@@ -48,8 +48,7 @@ services:
       - ./database/init-scripts:/docker-entrypoint-initdb.d/
     ports:
       - "127.0.0.1:3336:3306"
-
-
+      
 networks:
   traefik-net:
     external: true
